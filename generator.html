@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Market</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .phone { width: 320px; background-color: white; margin: 40px auto; border-radius: 15px; padding: 15px; border: 3px solid black; box-shadow: 0px 4px 10px rgba(0,0,0,0.2); }
+        .header { background-color: #ffcc00; font-weight: bold; padding: 12px; font-size: 22px; border-radius: 10px 10px 0 0; }
+        .button { background-color: #007bff; color: white; padding: 12px; margin: 12px; border: none; cursor: pointer; border-radius: 8px; width: 90%; font-size: 16px; transition: background 0.3s ease; }
+        .button:hover { background-color: #0056b3; }
+        .hidden { display: none; }
+        .summary { background-color: #666; color: white; font-weight: bold; padding: 8px; border-radius: 5px; }
+        table { width: 100%; margin-top: 12px; border-collapse: collapse; }
+        table, th, td { border: 1px solid black; }
+        th, td { padding: 8px; text-align: center; font-size: 14px; }
+        .total { font-weight: bold; margin-top: 12px; font-size: 18px; }
+        .date-time { margin-top: 12px; font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="phone" id="screen1">
+        <div class="header">SUPER MARKET</div>
+        <img src="13.png" alt="Cart Connection" style="width: 100%; margin-top: 15px; border-radius: 10px;">
+        <button class="button" onclick="connectBluetooth()">Connect</button>
+        <button class="button" onclick="customerCare()">Customer Care</button>
+    </div>
+
+    <div class="phone hidden" id="screen2">
+        <div class="header">SUPER MARKET</div>
+        <div class="date-time" id="dateTime"></div>
+        <div class="summary">SHOPPING SUMMARY</div>
+        <table id="shoppingTable">
+            <tr>
+                <th>S.No</th>
+                <th>ITEMS</th>
+                <th>QUANTITY</th>
+                <th>PRICE</th>
+            </tr>
+        </table>
+        <div class="total">TOTAL: <span id="totalPrice">0</span></div>
+        
+        <button class="button" onclick="makePayment('https://pay.google.com')">Pay with Google Pay</button>
+        <button class="button" onclick="makePayment('https://www.phonepe.com')">Pay with PhonePe</button>
+        
+        <button class="button" onclick="disconnect()">Disconnect</button>
+        <button class="button" onclick="customerCare()">Customer Care</button>
+    </div>
+
+    <div class="phone hidden" id="customerCare">
+        <div class="header">Customer Care</div>
+        <img src="1.png" alt="Customer Support" height="60" width="100">
+        <p>📞 Contact: +91 98765 43210</p>
+        <p>📧 Email: support@supermarket.com</p>
+        <button class="button" onclick="hideCustomerCare()">Back</button>
+    </div>
+
+    <script>
+        let device;
+        let totalPrice = 0;
+        let shoppingData = [];
+
+        async function connectBluetooth() {
+            try {
+                if (!navigator.bluetooth) {
+                    alert("Web Bluetooth is not supported in your browser. Use Chrome or Edge.");
+                    return;
+                }
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'HC-05' }],
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+                const characteristic = await service.getCharacteristic('custom_characteristic_uuid');
+
+                characteristic.addEventListener('characteristicvaluechanged', handleIncomingData);
+                await characteristic.startNotifications();
+
+                document.getElementById("screen1").classList.add("hidden");
+                document.getElementById("screen2").classList.remove("hidden");
+                updateDateTime();
+                setInterval(updateDateTime, 1000);
+            } catch (error) {
+                console.error("Bluetooth Connection Error:", error);
+                alert("Failed to connect. Ensure Bluetooth is on and retry.");
+            }
+        }
+
+        function handleIncomingData(event) {
+            let value = new TextDecoder().decode(event.target.value);
+            let item = JSON.parse(value);
+            updateShoppingTable(item);
+        }
+
+        function updateShoppingTable(item) {
+            let table = document.getElementById("shoppingTable");
+            let row = table.insertRow();
+            row.insertCell(0).innerText = shoppingData.length + 1;
+            row.insertCell(1).innerText = item.name;
+            row.insertCell(2).innerText = item.quantity;
+            row.insertCell(3).innerText = item.price;
+            shoppingData.push(item);
+            totalPrice += item.price;
+            document.getElementById("totalPrice").innerText = totalPrice;
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById("dateTime").innerText = now.toLocaleString();
+        }
+
+        function disconnect() {
+            if (device) device.gatt.disconnect();
+            alert("Disconnected from Bluetooth.");
+            document.getElementById("screen2").classList.add("hidden");
+            document.getElementById("screen1").classList.remove("hidden");
+        }
+
+        function customerCare() {
+            document.getElementById("screen1").classList.add("hidden");
+            document.getElementById("screen2").classList.add("hidden");
+            document.getElementById("customerCare").classList.remove("hidden");
+        }
+
+        function hideCustomerCare() {
+            document.getElementById("customerCare").classList.add("hidden");
+            document.getElementById("screen1").classList.remove("hidden");
+        }
+
+        function makePayment(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
