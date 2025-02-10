@@ -75,12 +75,11 @@
     </style>
 </head>
 <body>
-
     <div class="container" id="mainScreen">
         <div class="header">SMART TROLLEY</div>
         <img src="13.png" alt="Cart Connection" style="width: 100%; margin-top: 10px;">
         <input type="number" id="billingAmount" class="input-amount" placeholder="Enter Total Amount">
-        <button class="button" id="proceedButton" onclick="showPayments()">Proceed to Pay</button>
+        <button class="button" onclick="showPayments()">Proceed to Pay</button>
         <button class="button" onclick="showCustomerCare()">Customer Care</button>
     </div>
 
@@ -149,7 +148,16 @@
             document.getElementById("paymentSuccess").classList.add("hidden");
             document.getElementById("mainScreen").classList.remove("hidden");
         }
-    </script>
 
+        function showCustomerCare() {
+            document.getElementById("mainScreen").classList.add("hidden");
+            document.getElementById("customerCare").classList.remove("hidden");
+        }
+
+        function hideCustomerCare() {
+            document.getElementById("customerCare").classList.add("hidden");
+            document.getElementById("mainScreen").classList.remove("hidden");
+        }
+    </script>
 </body>
 </html>
